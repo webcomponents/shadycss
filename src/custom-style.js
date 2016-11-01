@@ -21,7 +21,7 @@ Example:
 
 'use strict';
 
-let ShadyCSS = window.ShadyCSS;
+import { ShadyCSS } from './ShadyCSS';
 
 let enqueued = false;
 
