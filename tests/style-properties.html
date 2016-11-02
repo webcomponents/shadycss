@@ -11,7 +11,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <script src="../../web-component-tester/browser.js"></script>
 <script src="../../custom-elements/custom-elements.min.js"></script>
 <script>
-    window.ShadyCSS = {shimshadow: true};
+  // Browsers with native shadow DOM or CSS properties shouldn't have the shims
+  // force-applied for these tests.
+  window.ShadyCSS = {shimshadow: false, shimcssproperties: false};
 </script>
 <script src="../../shadydom/shadydom.min.js"></script>
 <script src="../../shadycss/shadycss.min.js"></script>
@@ -21,41 +23,70 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <template id="host">
 	<style>
 		:host {
-			--custom-property-1: cyan;
-			--custom-property-2: rebeccapurple;
+			--custom-property-1: rgb(255, 255, 0);
+			--custom-property-2: rgb(0, 255, 255);
 			color: var(--custom-property-1);
 		}
 		
 		:host .descendant {
-			background-color: var(--custom-property-2);
+      color: var(--custom-property-2);
 		}
 	</style>
-	<div class="descendant"></div>
+	<div class="descendant">Words</div>
 </template>
 
 <script>
+  // So we can test IE
+  function shimTemplate(template) {
+      if ('content' in template) {
+          return;
+      }
+
+      Object.defineProperty(template, 'content', {
+          enumerable: false,
+          configurable: true,
+          get: function() {
+              if (this.localName !== 'template') {
+                  return;
+              }
+
+              if (!this._content) {
+                  this._content = document.createDocumentFragment();
+
+                  for (var i = 0; i < this.childNodes.length; i++) {
+                      this._content.appendChild(this.childNodes[i].cloneNode(true));
+                  }
+              }
+
+              return this._content;
+          }
+      });
+  }
+
   suite('Style Properties', function() {
     suite('custom properties defined on :host', function() {
       var instance;
 
       suiteSetup(function() {
         var template = document.querySelector('template#host');
+        shimTemplate(template);
         window.ShadyCSS.prepareTemplate(template, 'x-foo');
         instance = document.createElement('x-foo');
         instance.attachShadow({ mode: 'open' });
         instance.shadowRoot.appendChild(document.importNode(template.content, true));
-        window.ShadyCSS.applyStyle(instance, 'x-foo');
+        window.ShadyCSS.applyStyle(instance);
+        document.body.appendChild(instance);
       });
 
       test(':host receives self-defined property values', function() {
         var color = window.getComputedStyle(instance).color;
-        assert.equal('cyan', color);
+        assert.equal(color, 'rgb(255, 255, 0)');
       });
 
       test(':host descendants receive :host-defined property values', function() {
         var descendant = instance.shadowRoot.querySelector('.descendant');
-        var backgroundColor = window.getComputedStyle(descendant).backgroundColor;
-        assert.equal('rebeccapurple', backgroundColor);
+        var color = window.getComputedStyle(descendant).color;
+        assert.equal(color, 'rgb(0, 255, 255)');
       });
     });
   });

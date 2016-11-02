@@ -18,10 +18,10 @@ export default class StyleInfo {
     node.__styleInfo = styleInfo;
     return styleInfo;
   }
-  constructor(ast, placeholder, ownStylePropertyNames, elementName, typeExtension, cssBuild) {
+  constructor(ast, placeholder, ownPropertyNames, elementName, typeExtension, cssBuild) {
     this.styleRules = ast || null;
     this.placeholder = placeholder || null;
-    this.ownStylePropertyNames = ownStylePropertyNames || [];
+    this.ownPropertyNames = ownPropertyNames || [];
     this.overrideStyleProperties = {};
     this.elementName = elementName || '';
     this.cssBuild = cssBuild || '';

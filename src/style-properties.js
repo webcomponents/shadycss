@@ -29,21 +29,19 @@ export let StyleProperties = {
   // decorates styles with rule info and returns an array of used style
   // property names
   decorateStyles: function(rules) {
-    let self = this, props = {}, keyframes = [], ruleIndex = 0;
-    StyleUtil.forEachRule(rules, function(rule) {
-      self.decorateRule(rule);
+    let properties = {}, keyframes = [], ruleIndex = 0;
+    StyleUtil.forEachRule(rules, rule => {
+      this.decorateRule(rule);
       // mark in-order position of ast rule in styles block, used for cache key
       rule.index = ruleIndex++;
-      self.collectPropertiesInCssText(rule.propertyInfo.cssText, props);
-    }, function onKeyframesRule(rule) {
-      keyframes.push(rule);
-    });
+      this.collectPropertiesInCssText(rule.propertyInfo.cssText, properties);
+    }, rule => keyframes.push(rule));
     // Cache all found keyframes rules for later reference:
     rules._keyframes = keyframes;
     // return this list of property names *consumes* in these styles.
     let names = [];
-    for (let i in props) {
-      names.push(i);
+    for (let name in properties) {
+      names.push(name);
     }
     return names;
   },
@@ -274,16 +272,15 @@ export let StyleProperties = {
     return {properties: props, key: o};
   },
 
-  whenHostOrRootRule: function(scope, rule, cssBuild, callback) {
+  whenHostOrRootRule: function(element, rule, cssBuild, callback) {
     if (!rule.propertyInfo) {
       this.decorateRule(rule);
     }
     if (!rule.propertyInfo.properties) {
       return;
     }
-    let hostScope = scope.is ?
-    StyleTransformer._calcHostScope(scope.is, scope.extends) :
-    'html';
+    const { elementName, typeExtension } = StyleUtil.getElementNames(element);
+    let hostScope = StyleTransformer._calcHostScope(elementName, typeExtension);
     let parsedSelector = rule.parsedSelector;
     let isRoot = (parsedSelector === ':host > *' || parsedSelector === 'html');
     let isHost = parsedSelector.indexOf(':host') === 0 && !isRoot;
@@ -309,12 +306,11 @@ export let StyleProperties = {
       if (nativeShadow && !rule.transformedSelector) {
         // transform :host into a matchable selector
         rule.transformedSelector =
-        StyleTransformer._transformRuleCss(
-          rule,
-          StyleTransformer._transformComplexSelector,
-          StyleTransformer._calcElementScope(scope.is),
-          hostScope
-        );
+          StyleTransformer._transformRuleCss(
+            rule,
+            StyleTransformer._transformComplexSelector,
+            StyleTransformer._calcElementScope(elementName),
+            hostScope);
       }
       selectorToMatch = rule.transformedSelector || hostScope;
     }
@@ -325,14 +321,12 @@ export let StyleProperties = {
     });
   },
 
-  hostAndRootPropertiesForScope: function(scope, rules) {
+  hostAndRootPropertiesForElement: function(element, rules) {
     let hostProps = {}, rootProps = {}, self = this;
     // note: active rules excludes non-matching @media rules
     let cssBuild = rules && rules.__cssBuild;
     StyleUtil.forEachRule(rules, function(rule) {
-      // if scope is StyleDefaults, use _element for matchesSelector
-      self.whenHostOrRootRule(scope, rule, cssBuild, function(info) {
-        let element = scope._element || scope;
+      self.whenHostOrRootRule(element, rule, cssBuild, function(info) {
         if (matchesSelector.call(element, info.selector)) {
           if (info.isHost) {
             self.collectProperties(rule, hostProps);
@@ -342,35 +336,30 @@ export let StyleProperties = {
         }
       });
     }, null, true);
-    return {rootProps: rootProps, hostProps: hostProps};
+    return { rootProps, hostProps };
   },
 
   transformStyles: function(element, properties, scopeSelector) {
-    let self = this;
-    let hostSelector = StyleTransformer
-      ._calcHostScope(element.is, element.extends);
-    let rxHostSelector = element.extends ?
-      '\\' + hostSelector.slice(0, -1) + '\\]' :
-      hostSelector;
-    let hostRx = new RegExp(this.rx.HOST_PREFIX + rxHostSelector +
-      this.rx.HOST_SUFFIX);
+    let { elementName, typeExtension } = StyleUtil.getElementNames(element);
+    let hostSelector = StyleTransformer._calcHostScope(elementName, typeExtension);
+    let rxHostSelector = typeExtension ? '\\' + hostSelector.slice(0, -1) + '\\]' : hostSelector;
+    let hostRx = new RegExp(this.rx.HOST_PREFIX + rxHostSelector + this.rx.HOST_SUFFIX);
     let rules = StyleInfo.get(element).styleRules;
-    let keyframeTransforms =
-      this._elementKeyframeTransforms(element, rules, scopeSelector);
-    return StyleTransformer.elementStyles(element, rules, function(rule) {
-      self.applyProperties(rule, properties);
+    let keyframeTransforms = this._elementKeyframeTransforms(rules, scopeSelector);
+    return StyleTransformer.elementStyles(elementName, typeExtension, null, rules, rule => {
+      this.applyProperties(rule, properties);
       if (!nativeShadow &&
           !StyleUtil.isKeyframesSelector(rule) &&
           rule.cssText) {
         // NOTE: keyframe transforms only scope munge animation names, so it
         // is not necessary to apply them in ShadowDOM.
-        self.applyKeyframeTransforms(rule, keyframeTransforms);
-        self._scopeSelector(rule, hostRx, hostSelector, scopeSelector);
+        this.applyKeyframeTransforms(rule, keyframeTransforms);
+        this._scopeSelector(rule, hostRx, hostSelector, scopeSelector);
       }
     });
   },
 
-  _elementKeyframeTransforms: function(element, rules, scopeSelector) {
+  _elementKeyframeTransforms: function(rules, scopeSelector) {
     let keyframesRules = rules._keyframes;
     let keyframeTransforms = {};
     if (!nativeShadow && keyframesRules) {
@@ -462,7 +451,7 @@ export let StyleProperties = {
       } else if (cssText) {
         // apply css after the scope style of the element to help with
         // style precedence rules.
-        style = StyleUtil.applyCss(cssText, selector, element.shadowRoot,
+        style = StyleUtil.applyCss(cssText, selector, element.shadowRoot, 
           styleInfo.placeholder);
       }
     } else {

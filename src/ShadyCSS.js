@@ -65,15 +65,8 @@ export let ShadyCSS = {
     }
     template._prepared = true;
     template.name = elementName;
-    template.extends = typeExtension;
     templateMap[elementName] = template;
-    let cssBuild = this._getCssBuild(template);
     let cssText = this._gatherStyles(template);
-    let info = {
-      is: elementName,
-      extends: typeExtension,
-      __cssBuild: cssBuild,
-    };
     if (!this.nativeShadow) {
       StyleTransformer.dom(template.content, elementName);
     }
@@ -85,51 +78,44 @@ export let ShadyCSS = {
 
     let ownPropertyNames = [];
     if (!this.nativeCss) {
-      ownPropertyNames = StyleProperties.decorateStyles(template._styleAst, info);
+      ownPropertyNames = StyleProperties.decorateStyles(template._styleAst);
     }
     if (!ownPropertyNames.length || this.nativeCss) {
-      let root = this.nativeShadow ? template.content : null;
-      let placeholder = placeholderMap[elementName];
-      let style = this._generateStaticStyle(info, template._styleAst, root, placeholder);
+      let style = StyleTransformer.elementStyles(elementName, typeExtension, this._getCssBuild(template), template._styleAst);
+      if (style.length) {
+        let root = this.nativeShadow ? template.content : null;
+        let placeholder = placeholderMap[elementName];
+        style = StyleUtil.applyCss(style, elementName, root, placeholder);
+      }
       template._style = style;
     }
     template._ownPropertyNames = ownPropertyNames;
   },
-  _generateStaticStyle(info, rules, shadowroot, placeholder) {
-    let cssText = StyleTransformer.elementStyles(info, rules);
-    if (cssText.length) {
-      return StyleUtil.applyCss(cssText, info.is, shadowroot, placeholder);
-    }
-  },
-  _prepareHost(host) {
-    let is = host.getAttribute('is') || host.localName;
-    let typeExtension;
-    if (is !== host.localName) {
-      typeExtension = host.localName;
-    }
-    let placeholder = placeholderMap[is];
-    let template = templateMap[is];
+  _prepareHost(hostElement) {
+    let { elementName, typeExtension } = StyleUtil.getElementNames(hostElement);
+    let placeholder = placeholderMap[elementName];
+    let template = templateMap[elementName];
     let ast;
-    let ownStylePropertyNames;
+    let ownPropertyNames;
     let cssBuild;
     if (template) {
       ast = template._styleAst;
-      ownStylePropertyNames = template._ownPropertyNames;
+      ownPropertyNames = template._ownPropertyNames;
       cssBuild = template._cssBuild;
     }
-    return StyleInfo.set(host,
+    return StyleInfo.set(hostElement,
       new StyleInfo(
         ast,
         placeholder,
-        ownStylePropertyNames,
-        is,
+        ownPropertyNames,
+        elementName,
         typeExtension,
         cssBuild
       )
     );
   },
-  applyStyle(host, overrideProps) {
-    let is = host.getAttribute('is') || host.localName;
+  applyStyle(hostElement, overrideProps) {    
+    let { elementName, typeExtension } = StyleUtil.getElementNames(hostElement);
     if (window.CustomStyle) {
       let CS = window.CustomStyle;
       if (CS._documentDirty) {
@@ -143,36 +129,36 @@ export let ShadyCSS = {
         CS._documentDirty = false;
       }
     }
-    let styleInfo = StyleInfo.get(host);
+    let styleInfo = StyleInfo.get(hostElement);
     if (!styleInfo) {
-      styleInfo = this._prepareHost(host);
+      styleInfo = this._prepareHost(hostElement);
     }
     Object.assign(styleInfo.overrideStyleProperties, overrideProps);
     if (this.nativeCss) {
-      let template = templateMap[is];
+      let template = templateMap[elementName];
       if (template && template.__applyShimInvalid && template._style) {
         // update template
-        ApplyShim.transformRules(template._styleAst, is);
-        template._style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
+        ApplyShim.transformRules(template._styleAst, elementName);
+        template._style.textContent = StyleTransformer.elementStyles(elementName, typeExtension, null, styleInfo.styleRules);
         // update instance if native shadowdom
         if (this.nativeShadow) {
-          let style = host.shadowRoot.querySelector('style');
-          style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
+          let style = hostElement.shadowRoot.querySelector('style');
+          style.textContent = StyleTransformer.elementStyles(elementName, typeExtension, null, styleInfo.styleRules);
         }
         styleInfo.styleRules = template._styleAst;
       }
-      this._updateNativeProperties(host, styleInfo.overrideStyleProperties);
+      this._updateNativeProperties(hostElement, styleInfo.overrideStyleProperties);
     } else {
-      this._updateProperties(host, styleInfo);
-      if (styleInfo.ownStylePropertyNames && styleInfo.ownStylePropertyNames.length) {
+      this._updateProperties(hostElement, styleInfo);
+      if (styleInfo.ownPropertyNames && styleInfo.ownPropertyNames.length) {
         // TODO: use caching
-        this._applyStyleProperties(host, styleInfo);
+        this._applyStyleProperties(hostElement, styleInfo);
       }
     }
-    let root = this._isRootOwner(host) ? host : host.shadowRoot;
+    let rootNode = this._isRootOwner(hostElement) ? hostElement : hostElement.shadowRoot;
     // note: some elements may not have a root!
-    if (root) {
-      this._applyToDescendants(root);
+    if (rootNode) {
+      this._applyToDescendants(rootNode);
     }
   },
   _applyToDescendants(root) {
@@ -200,30 +186,30 @@ export let ShadyCSS = {
   _isRootOwner(node) {
     return (node === this._documentOwner);
   },
-  _applyStyleProperties(host, styleInfo) {
-    let is = host.getAttribute('is') || host.localName;
-    let cacheEntry = styleCache.fetch(is, styleInfo.styleProperties, styleInfo.ownStylePropertyNames);
+  _applyStyleProperties(hostElement, styleInfo) {    
+    let { elementName } = StyleUtil.getElementNames(hostElement);
+    let cacheEntry = styleCache.fetch(elementName, styleInfo.styleProperties, styleInfo.ownPropertyNames);
     let cachedScopeSelector = cacheEntry && cacheEntry.scopeSelector;
     let cachedStyle = cacheEntry ? cacheEntry.styleElement : null;
     let oldScopeSelector = styleInfo.scopeSelector;
     // only generate new scope if cached style is not found
-    styleInfo.scopeSelector = cachedScopeSelector || this._generateScopeSelector(is);
-    let style = StyleProperties.applyElementStyle(host, styleInfo.styleProperties, styleInfo.scopeSelector, cachedStyle);
+    styleInfo.scopeSelector = cachedScopeSelector || this._generateScopeSelector(elementName);
+    let style = StyleProperties.applyElementStyle(hostElement, styleInfo.styleProperties, styleInfo.scopeSelector, cachedStyle);
     if (!this.nativeShadow) {
-      StyleProperties.applyElementScopeSelector(host, styleInfo.scopeSelector, oldScopeSelector);
+      StyleProperties.applyElementScopeSelector(hostElement, styleInfo.scopeSelector, oldScopeSelector);
     }
     if (!cacheEntry) {
-      styleCache.store(is, styleInfo.styleProperties, style, styleInfo.scopeSelector);
+      styleCache.store(elementName, styleInfo.styleProperties, style, styleInfo.scopeSelector);
     }
     return style;
   },
-  _updateProperties(host, styleInfo) {
-    let owner = this._styleOwnerForNode(host);
+  _updateProperties(hostElement, styleInfo) {
+    let owner = this._styleOwnerForNode(hostElement);
     let ownerStyleInfo = StyleInfo.get(owner);
     let ownerProperties = ownerStyleInfo.styleProperties;
     let props = Object.create(ownerProperties || null);
-    let hostAndRootProps = StyleProperties.hostAndRootPropertiesForScope(host, styleInfo.styleRules);
-    let propertyData = StyleProperties.propertyDataFromStyles(ownerStyleInfo.styleRules, host);
+    let hostAndRootProps = StyleProperties.hostAndRootPropertiesForElement(hostElement, styleInfo.styleRules);
+    let propertyData = StyleProperties.propertyDataFromStyles(ownerStyleInfo.styleRules, hostElement);
     let propertiesMatchingHost = propertyData.properties
     Object.assign(
       props,

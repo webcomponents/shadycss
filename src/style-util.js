@@ -13,6 +13,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 import {nativeShadow, nativeCssVariables} from './style-settings'
 import {parse, stringify, types} from './css-parse'
 
+export function getElementNames(element) {
+  if (element.hasAttribute('is')) {
+    return { 
+      elementName: element.getAttribute('is'),
+      typeExtension: element.localName
+    };
+  } else {
+    return {
+      elementName: element.localName,
+      typeExtension: null
+    };
+  }
+}
+
 export function toCssText (rules, callback) {
   if (typeof rules === 'string') {
     rules = parse(rules);
