@@ -89,17 +89,16 @@ export let StyleTransformer = {
     }
   },
 
-  elementStyles: function(element, styleRules, callback) {
-    let cssBuildType = element.__cssBuild;
+  elementStyles: function(elementName, typeExtension, buildType, rules, callback) {
     // no need to shim selectors if settings.useNativeShadow, also
     // a shady css build will already have transformed selectors
     // NOTE: This method may be called as part of static or property shimming.
     // When there is a targeted build it will not be called for static shimming,
     // but when the property shim is used it is called and should opt out of
     // static shimming work when a proper build exists.
-    let cssText = (nativeShadow || cssBuildType === 'shady') ?
-    StyleUtil.toCssText(styleRules, callback) :
-    this.css(styleRules, element.is, element.extends, callback) + '\n\n';
+    let cssText = (nativeShadow || buildType === 'shady') ?
+      StyleUtil.toCssText(rules, callback) :
+      this.css(elementName, typeExtension, rules, callback) + '\n\n';
     return cssText.trim();
   },
 
@@ -107,31 +106,26 @@ export let StyleTransformer = {
   // a string of scoped css where each selector is transformed to include
   // a class created from the scope. ShadowDOM selectors are also transformed
   // (e.g. :host) to use the scoping selector.
-  css: function(rules, scope, ext, callback) {
-    let hostScope = this._calcHostScope(scope, ext);
-    scope = this._calcElementScope(scope);
-    let self = this;
-    return StyleUtil.toCssText(rules, function(rule) {
+  css: function(elementName, typeExtension, rules, callback) {
+    let hostScope = this._calcHostScope(elementName, typeExtension);
+    let elementScope = this._calcElementScope(elementName);
+    return StyleUtil.toCssText(rules, rule => {
       if (!rule.isScoped) {
-        self.rule(rule, scope, hostScope);
+        this.rule(rule, elementScope, hostScope);
         rule.isScoped = true;
       }
       if (callback) {
-        callback(rule, scope, hostScope);
+        callback(rule, elementScope, hostScope);
       }
     });
   },
 
-  _calcElementScope: function (scope) {
-    if (scope) {
-      return CSS_CLASS_PREFIX + scope;
-    } else {
-      return '';
-    }
+  _calcElementScope: function (elementName) {
+    return elementName ? CSS_CLASS_PREFIX + elementName : '';
   },
 
-  _calcHostScope: function(scope, ext) {
-    return ext ? '[is=' +  scope + ']' : scope;
+  _calcHostScope: function(elementName, typeExtension) {
+    return typeExtension ? `[is=${elementName}]` : elementName;
   },
 
   rule: function (rule, scope, hostScope) {
