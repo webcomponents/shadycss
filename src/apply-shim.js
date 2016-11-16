@@ -73,6 +73,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 import {rx, forEachRule, processVariableAndFallback, rulesForStyle} from './style-util'
 import templateMap from './template-map'
+import StyleInfo from './style-info'
 
 let MIXIN_MATCH = rx.MIXIN_MATCH;
 let VAR_ASSIGN = rx.VAR_ASSIGN;
@@ -124,9 +125,6 @@ class ApplyShim {
     forEachRule(rules, (r) => {
       this.transformRule(r);
     });
-    if (this._currentTemplate) {
-      this._currentTemplate.__applyShimInvalid = false;
-    }
     this._currentTemplate = null;
   }
   transformRule(rule) {
@@ -252,7 +250,7 @@ class ApplyShim {
   _invalidateMixinEntry(mixinEntry) {
     for (let elementName in mixinEntry.dependants) {
       if (elementName !== this._currentTemplate) {
-        mixinEntry.dependants[elementName].__applyShimInvalid = true;
+        StyleInfo.invalidate(elementName);
       }
     }
   }

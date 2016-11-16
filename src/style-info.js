@@ -10,6 +10,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 'use strict';
 
+import templateMap from './template-map'
+import {nativeShadow} from './style-settings'
+
+let instanceMap = {};
+
+function addInstance(instance) {
+  let elementName = instance.elementName;
+  if (!instanceMap[elementName]) {
+    instanceMap[elementName] = [];
+  }
+  instanceMap[elementName].push(instance);
+}
+
 export default class StyleInfo {
   static get(node) {
     return node.__styleInfo;
@@ -18,7 +31,24 @@ export default class StyleInfo {
     node.__styleInfo = styleInfo;
     return styleInfo;
   }
-  constructor(ast, placeholder, ownStylePropertyNames, elementName, typeExtension, cssBuild) {
+  static invalidate(elementName) {
+    if (templateMap[elementName]) {
+      templateMap[elementName]._applyShimInvalid = true;
+      if (nativeShadow) {
+        const instances = instanceMap[elementName];
+        if (!instances) {
+          return;
+        }
+        for (let i = 0; i < instances.length; i++) {
+          instances[i].applyShimInvalid = true;
+        }
+      }
+    }
+  }
+  static validate(elementName) {
+    templateMap[elementName]._applyShimInvalid = false;
+  }
+  constructor(ast, placeholder, ownStylePropertyNames, elementName, typeExtension, cssBuild, applyShimInvalid) {
     this.styleRules = ast || null;
     this.placeholder = placeholder || null;
     this.ownStylePropertyNames = ownStylePropertyNames || [];
@@ -29,5 +59,9 @@ export default class StyleInfo {
     this.styleProperties = null;
     this.scopeSelector = null;
     this.customStyle = null;
+    this.applyShimInvalid = applyShimInvalid || false;
+    if (nativeShadow) {
+      addInstance(this);
+    }
   }
 }

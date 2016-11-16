@@ -114,10 +114,12 @@ export let ShadyCSS = {
     let ast;
     let ownStylePropertyNames;
     let cssBuild;
+    let applyShimInvalid;
     if (template) {
       ast = template._styleAst;
       ownStylePropertyNames = template._ownPropertyNames;
       cssBuild = template._cssBuild;
+      applyShimInvalid = template._applyShimInvalid;
     }
     return StyleInfo.set(host,
       new StyleInfo(
@@ -126,7 +128,8 @@ export let ShadyCSS = {
         ownStylePropertyNames,
         is,
         typeExtension,
-        cssBuild
+        cssBuild,
+        applyShimInvalid
       )
     );
   },
@@ -152,14 +155,18 @@ export let ShadyCSS = {
     Object.assign(styleInfo.overrideStyleProperties, overrideProps);
     if (this.nativeCss) {
       let template = templateMap[is];
-      if (template && template.__applyShimInvalid && template._style) {
+      if (template && template._style && (styleInfo.applyShimInvalid || template._applyShimInvalid)) {
         // update template
-        ApplyShim.transformRules(template._styleAst, is);
-        template._style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
+        if (template._applyShimInvalid) {
+          ApplyShim.transformRules(template._styleAst, is);
+          template._style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
+          StyleInfo.validate(is);
+        }
         // update instance if native shadowdom
         if (this.nativeShadow) {
           let style = host.shadowRoot.querySelector('style');
           style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
+          styleInfo.applyShimInvalid = false;
         }
         styleInfo.styleRules = template._styleAst;
       }
@@ -173,18 +180,25 @@ export let ShadyCSS = {
     }
     let root = this._isRootOwner(host) ? host : host.shadowRoot;
     // note: some elements may not have a root!
-    if (root) {
-      this._applyToDescendants(root);
+    if (root && root.children) {
+      this._applyToDescendants(root.children);
     }
   },
-  _applyToDescendants(root) {
-    let c$ = root.children;
-    for (let i = 0, c; i < c$.length; i++) {
-      c = c$[i];
+  _isElementNode(node) {
+    return node.nodeType === Node.ELEMENT_NODE;
+  },
+  _applyToDescendants(children) {
+    for (let i = 0, c; i < children.length; i++) {
+      c = children[i];
       if (c.shadowRoot) {
         this.applyStyle(c);
+      } else if (c.localName === 'slot') {
+        if (!nativeShadow) {
+          window.ShadyDOM.flush();
+        }
+        this._applyToDescendants(c.assignedNodes().filter(this._isElementNode));
       }
-      this._applyToDescendants(c);
+      this._applyToDescendants(c.children);
     }
   },
   _styleOwnerForNode(node) {
