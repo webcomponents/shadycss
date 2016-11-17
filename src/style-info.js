@@ -12,8 +12,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 import templateMap from './template-map'
 
-const TIMEOUT = 125;
-
 export default class StyleInfo {
   static get(node) {
     return node.__styleInfo;
@@ -31,10 +29,10 @@ export default class StyleInfo {
     const template = templateMap[elementName];
     if (!template._invalidating) {
       template._invalidating = true;
-      setTimeout(() => {
+      Promise.resolve(() => {
         template._applyShimInvalid = false;
         template._invalidating = false;
-      }, TIMEOUT);
+      });
     }
   }
   constructor(ast, placeholder, ownStylePropertyNames, elementName, typeExtension, cssBuild) {
