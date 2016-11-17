@@ -114,12 +114,10 @@ export let ShadyCSS = {
     let ast;
     let ownStylePropertyNames;
     let cssBuild;
-    let applyShimInvalid;
     if (template) {
       ast = template._styleAst;
       ownStylePropertyNames = template._ownPropertyNames;
       cssBuild = template._cssBuild;
-      applyShimInvalid = template._applyShimInvalid;
     }
     return StyleInfo.set(host,
       new StyleInfo(
@@ -128,8 +126,7 @@ export let ShadyCSS = {
         ownStylePropertyNames,
         is,
         typeExtension,
-        cssBuild,
-        applyShimInvalid
+        cssBuild
       )
     );
   },
@@ -155,9 +152,9 @@ export let ShadyCSS = {
     Object.assign(styleInfo.overrideStyleProperties, overrideProps);
     if (this.nativeCss) {
       let template = templateMap[is];
-      if (template && template._style && (styleInfo.applyShimInvalid || template._applyShimInvalid)) {
+      if (template && template._style && template._applyShimInvalid) {
         // update template
-        if (template._applyShimInvalid) {
+        if (!template._invalidating) {
           ApplyShim.transformRules(template._styleAst, is);
           template._style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
           StyleInfo.validate(is);
@@ -166,7 +163,6 @@ export let ShadyCSS = {
         if (this.nativeShadow) {
           let style = host.shadowRoot.querySelector('style');
           style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
-          styleInfo.applyShimInvalid = false;
         }
         styleInfo.styleRules = template._styleAst;
       }

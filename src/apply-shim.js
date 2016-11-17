@@ -249,7 +249,7 @@ class ApplyShim {
 
   _invalidateMixinEntry(mixinEntry) {
     for (let elementName in mixinEntry.dependants) {
-      if (elementName !== this._currentTemplate) {
+      if (this._currentTemplate && elementName !== this._currentTemplate.name) {
         StyleInfo.invalidate(elementName);
       }
     }
