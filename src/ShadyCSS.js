@@ -24,6 +24,8 @@ import StyleCache from './style-cache'
 import ApplyShim from './apply-shim'
 import {flush} from './document-watcher'
 
+import assign from './object-assign'
+
 let styleCache = new StyleCache();
 
 export let ShadyCSS = {
@@ -149,7 +151,7 @@ export let ShadyCSS = {
     if (!styleInfo) {
       styleInfo = this._prepareHost(host);
     }
-    Object.assign(styleInfo.overrideStyleProperties, overrideProps);
+    assign(styleInfo.overrideStyleProperties, overrideProps);
     if (this.nativeCss) {
       let template = templateMap[is];
       if (template && template._style && template._applyShimInvalid) {
@@ -237,7 +239,7 @@ export let ShadyCSS = {
     let hostAndRootProps = StyleProperties.hostAndRootPropertiesForScope(host, styleInfo.styleRules);
     let propertyData = StyleProperties.propertyDataFromStyles(ownerStyleInfo.styleRules, host);
     let propertiesMatchingHost = propertyData.properties
-    Object.assign(
+    assign(
       props,
       hostAndRootProps.hostProps,
       propertiesMatchingHost,

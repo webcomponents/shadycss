@@ -15,6 +15,7 @@ import {nativeShadow} from './style-settings'
 import {StyleTransformer} from './style-transformer'
 import * as StyleUtil from './style-util'
 import StyleInfo from './style-info'
+import assign from './object-assign';
 
 // TODO: dedupe with shady
 let p = window.Element.prototype;
@@ -70,7 +71,7 @@ export let StyleProperties = {
     let info = rule.propertyInfo;
     if (info) {
       if (info.properties) {
-        Object.assign(properties, info.properties);
+        assign(properties, info.properties);
         return true;
       }
     } else {

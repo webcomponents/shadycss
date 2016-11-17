@@ -74,6 +74,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 import {rx, forEachRule, processVariableAndFallback, rulesForStyle} from './style-util'
 import templateMap from './template-map'
 import StyleInfo from './style-info'
+import assign from './object-assign';
 
 let MIXIN_MATCH = rx.MIXIN_MATCH;
 let VAR_ASSIGN = rx.VAR_ASSIGN;
@@ -277,7 +278,7 @@ class ApplyShim {
     if (oldProps) {
       // NOTE: since we use mixin, the map of properties is updated here
       // and this is what we want.
-      combinedProps = Object.assign(Object.create(oldProps), mixinValues);
+      combinedProps = assign(Object.create(oldProps), mixinValues);
     } else {
       this._map.set(propertyName, combinedProps);
     }
