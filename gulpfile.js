@@ -71,6 +71,7 @@ let modules = [
   'style-settings',
   'style-transformer',
   'style-util',
+  'make-element'
 ];
 
 let moduleTasks = modules.map((m) => {

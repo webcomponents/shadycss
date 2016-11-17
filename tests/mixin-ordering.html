@@ -1,27 +1,16 @@
 <!doctype html>
 <head>
   <script src="../../web-component-tester/browser.js"></script>
-  <script src="../../custom-elements/custom-elements.min.js"></script>
+  <script>
+    if (window.customElements) {
+      document.write('<script src="../../custom-elements/src/native-shim.js"></s' + 'cript>');
+    } else {
+      document.write('<script src="../../custom-elements/custom-elements.min.js"></s' + 'cript>');
+    }
+  </script>
   <script src="../../shadydom/shadydom.min.js"></script>
   <script src="../../shadycss/shadycss.min.js"></script>
-
-  <script>
-  function makeElement(name) {
-    let template = document.querySelector(`template#${name}`);
-    if (template) {
-      ShadyCSS.prepareTemplate(template, name);
-    }
-    customElements.define(name, class extends HTMLElement {
-      connectedCallback() {
-        if (template && !this.shadowRoot) {
-          this.attachShadow({mode: 'open'});
-          this.shadowRoot.appendChild(document.importNode(template.content, true));
-        }
-        ShadyCSS.applyStyle(this);
-      }
-    });
-  }
-  </script>
+  <script src="module/generated/make-element.js"></script>
 </head>
 <body>
     <div>
