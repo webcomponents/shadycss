@@ -40,6 +40,7 @@ export let ShadyCSS = {
     let id = this.scopeCounter[name] = (this.scopeCounter[name] || 0) + 1;
     return name + '-' + id;
   },
+  _forceRecalc: false,
   getStyleAst(style) {
     return StyleUtil.rulesForStyle(style);
   },
@@ -148,46 +149,55 @@ export let ShadyCSS = {
       }
     }
     let styleInfo = StyleInfo.get(host);
-    let hasApplied = Boolean(styleInfo);
     if (!styleInfo) {
       styleInfo = this._prepareHost(host);
     }
-    assign(styleInfo.overrideStyleProperties, overrideProps);
     if (overrideProps) {
       styleInfo.overrideStyleProperties =
         styleInfo.overrideStyleProperties || {};
       assign(styleInfo.overrideStyleProperties, overrideProps);
+      this._forceRecalc = true;
     }
-    if (this.nativeCss) {
-      let template = templateMap[is];
-      if (template && template._style && template._applyShimInvalid) {
-        // update template
-        if (!template._invalidating) {
-          ApplyShim.transformRules(template._styleAst, is);
-          template._style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
-          StyleInfo.validate(is);
+    let template = templateMap[is];
+    if (this._forceRecalc || styleInfo.shouldRecalculate || template._applyShimInvalid) {
+      if (this.nativeCss) {
+        if (template && template._style && template._applyShimInvalid) {
+          // update template
+          if (!template._invalidating) {
+            ApplyShim.transformRules(template._styleAst, is);
+            template._style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
+            StyleInfo.validate(is);
+          }
+          // update instance if native shadowdom
+          if (this.nativeShadow) {
+            let root = host.shadowRoot;
+            if (root) {
+              let style = root.querySelector('style');
+              style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
+            }
+          }
+          styleInfo.styleRules = template._styleAst;
         }
-        // update instance if native shadowdom
-        if (this.nativeShadow) {
-          let style = host.shadowRoot.querySelector('style');
-          style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
+        this._updateNativeProperties(host, styleInfo.overrideStyleProperties);
+      } else {
+        this._updateProperties(host, styleInfo);
+        if (styleInfo.ownStylePropertyNames && styleInfo.ownStylePropertyNames.length) {
+          this._applyStyleProperties(host, styleInfo);
         }
-        styleInfo.styleRules = template._styleAst;
-      }
-      this._updateNativeProperties(host, styleInfo.overrideStyleProperties);
-    } else {
-      this._updateProperties(host, styleInfo);
-      if (styleInfo.ownStylePropertyNames && styleInfo.ownStylePropertyNames.length) {
-        // TODO: use caching
-        this._applyStyleProperties(host, styleInfo);
       }
     }
-    if (hasApplied) {
-      let root = this._isRootOwner(host) ? host : host.shadowRoot;
-      // note: some elements may not have a root!
-      if (root) {
-        this._applyToDescendants(root.children);
-      }
+    styleInfo.shouldRecalculate = false;
+    let root = this._isRootOwner(host) ? host : host.shadowRoot;
+    // note: some elements may not have a root!
+    if (root) {
+      this._applyToDescendants(root.children);
+    }
+    this._forceRecalc = false;
+  },
+  applyStyleInvalid(node) {
+    let styleInfo = StyleInfo.get(node);
+    if (styleInfo) {
+      styleInfo.shouldRecalculate = true;
     }
   },
   _isElementNode(node) {
@@ -198,10 +208,12 @@ export let ShadyCSS = {
       c = children[i];
       if (c.shadowRoot) {
         this.applyStyle(c);
-      } else if (c.localName === 'slot') {
+      } else if (nativeCssVariables && c.localName === 'slot') {
+        // TODO(dfreedm): remove when ShadyDOM flushes assignedNodes
         if (!nativeShadow) {
           window.ShadyDOM.flush();
         }
+        // Also apply styles to elements that have been composed through a `slot`
         this._applyToDescendants(c.assignedNodes().filter(this._isElementNode));
       }
       this._applyToDescendants(c.children);

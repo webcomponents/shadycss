@@ -46,5 +46,6 @@ export default class StyleInfo {
     this.styleProperties = null;
     this.scopeSelector = null;
     this.customStyle = null;
+    this.shouldRecalculate = true;
   }
 }

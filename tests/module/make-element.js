@@ -26,5 +26,8 @@ window.makeElement = (name) => {
       }
       window.ShadyCSS.applyStyle(this);
     }
+    disconnectedCallback() {
+      window.ShadyCSS.applyStyleInvalid(this);
+    }
   });
 };

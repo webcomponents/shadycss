@@ -21,6 +21,9 @@ To use ShadyCSS:
 2. Then, after the shadowRoot is created and whenever dynamic
 updates are required, call `ShadyCSS.applyStyle(element)`.
 
+3. When an element is removed from the DOM, call `ShadyCSS.applyStyleInvalid(element)`
+so that it will update styling correctly when reattached.
+
 3. If a styling change is made that may affect the whole document, call
 `ShadyCSS.updateStyles()`.
 
