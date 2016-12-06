@@ -148,10 +148,16 @@ export let ShadyCSS = {
       }
     }
     let styleInfo = StyleInfo.get(host);
+    let hasApplied = Boolean(styleInfo);
     if (!styleInfo) {
       styleInfo = this._prepareHost(host);
     }
     assign(styleInfo.overrideStyleProperties, overrideProps);
+    if (overrideProps) {
+      styleInfo.overrideStyleProperties =
+        styleInfo.overrideStyleProperties || {};
+      assign(styleInfo.overrideStyleProperties, overrideProps);
+    }
     if (this.nativeCss) {
       let template = templateMap[is];
       if (template && template._style && template._applyShimInvalid) {
@@ -176,10 +182,12 @@ export let ShadyCSS = {
         this._applyStyleProperties(host, styleInfo);
       }
     }
-    let root = this._isRootOwner(host) ? host : host.shadowRoot;
-    // note: some elements may not have a root!
-    if (root && root.children) {
-      this._applyToDescendants(root.children);
+    if (hasApplied) {
+      let root = this._isRootOwner(host) ? host : host.shadowRoot;
+      // note: some elements may not have a root!
+      if (root) {
+        this._applyToDescendants(root.children);
+      }
     }
   },
   _isElementNode(node) {
@@ -351,13 +359,7 @@ export let ShadyCSS = {
         classes.push(StyleProperties.XSCOPE_NAME, styleInfo.scopeSelector);
       }
     }
-    let out = classes.join(' ');
-    // use native setAttribute provided by ShadyDOM when setAttribute is patched
-    if (element.__nativeSetAttribute) {
-      element.__nativeSetAttribute('class', out);
-    } else {
-      element.setAttribute('class', out);
-    }
+    StyleUtil.setElementClassRaw(element, classes.join(' '));
   },
   _styleInfoForNode(node) {
     return StyleInfo.get(node);
