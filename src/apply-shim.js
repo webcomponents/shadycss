@@ -140,7 +140,7 @@ class ApplyShim {
     // :root was only used for variable assignment in property shim,
     // but generates invalid selectors with real properties.
     // replace with `:host > *`, which serves the same effect
-    if (rule.selector === ':root') {
+    if (typeof InstallTrigger === 'undefined' && rule.selector === ':root') {
       rule.selector = ':host > *';
     }
   }
