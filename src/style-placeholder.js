@@ -1,6 +1,6 @@
 /**
 @license
-Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
 This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
 The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
 The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
@@ -15,12 +15,18 @@ import {nativeShadow} from './style-settings'
 
 let placeholderMap = {};
 
-const ce = window.customElements;
+/**
+ * @const {CustomElementRegistry}
+ */
+const ce = window['customElements'];
 if (ce && !nativeShadow) {
-  const origDefine = ce.define;
-  ce.define = function(name, clazz, options) {
+  /**
+   * @const {function(this:CustomElementRegistry, string,function(new:HTMLElement),{extends: string}=)}
+   */
+  const origDefine = ce['define'];
+  ce['define'] = function(name, clazz, options) {
     placeholderMap[name] = applyStylePlaceHolder(name);
-    return origDefine.call(ce, name, clazz, options);
+    return origDefine.call(/** @type {!CustomElementRegistry} */(ce), name, clazz, options);
   };
 }
 
