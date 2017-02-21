@@ -1,6 +1,6 @@
 {
   "name": "shadycss",
-  "main": "shadycss.min.js",
+  "main": "apply-shim.html",
   "authors": [
     "The Polymer Authors"
   ],
