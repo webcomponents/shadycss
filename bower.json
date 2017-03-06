@@ -1,5 +1,6 @@
 {
   "name": "shadycss",
+  "version": "1.0.0-rc.1",
   "main": "scoping-shim.min.js",
   "authors": [
     "The Polymer Authors"
