@@ -155,7 +155,7 @@ export default class ScopingShim {
   _ensureApplyShim() {
     if (this._applyShim) {
       return;
-    } else if (window.ShadyCSS.ApplyShim) {
+    } else if (window.ShadyCSS && window.ShadyCSS.ApplyShim) {
       this._applyShim = window.ShadyCSS.ApplyShim;
       this._applyShim['invalidCallback'] = ApplyShimUtils.invalidate;
     } else {
