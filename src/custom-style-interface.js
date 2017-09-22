@@ -45,6 +45,8 @@ export default class CustomStyleInterface {
     /** @type {!Array<!CustomStyleProvider>} */
     this['customStyles'] = [];
     this['enqueued'] = false;
+    /** @type {MutationObserver} */
+    this.observer = null;
   }
   /**
    * Queue a validation for new custom styles to batch style recalculations
@@ -105,11 +107,51 @@ export default class CustomStyleInterface {
     }
     return cs;
   }
+  /**
+   * @param {!HTMLStyleElement} style
+   * @return {boolean}
+   */
+  isDocumentStyle(style) {
+    return !style.hasAttribute('scope');
+  }
+  gatherMainDocumentStyles() {
+    const styles = document.querySelectorAll('style:not([scope])');
+    for (let i = 0; i < styles.length; i++) {
+      const s = /** @type {!HTMLStyleElement} */(styles[i]);
+      this.addCustomStyle(s);
+    }
+  }
+  watchMainDocumentStyles() {
+    if (this.observer) {
+      return;
+    }
+    this.gatherMainDocumentStyles();
+    /**
+     * @param {Array<MutationRecord>} mxns
+     */
+    let mutationHandler = (mxns) => {
+      for (let i = 0; i < mxns.length; i++) {
+        let mxn = mxns[i];
+        for (let j = 0; j < mxn.addedNodes.length; j++) {
+          let n = mxn.addedNodes[j];
+          if (n.nodeType === Node.ELEMENT_NODE && n.localName === 'style') {
+            const el = /** @type {!HTMLStyleElement} */(n);
+            if (this.isDocumentStyle(el)) {
+              this.addCustomStyle(el);
+            }
+          }
+        }
+      }
+    };
+    this.observer = new MutationObserver(mutationHandler);
+    this.observer.observe(document, {childList: true, subtree: true});
+  }
 }
 
 CustomStyleInterface.prototype['addCustomStyle'] = CustomStyleInterface.prototype.addCustomStyle;
 CustomStyleInterface.prototype['getStyleForCustomStyle'] = CustomStyleInterface.prototype.getStyleForCustomStyle;
 CustomStyleInterface.prototype['processStyles'] = CustomStyleInterface.prototype.processStyles;
+CustomStyleInterface.prototype['watchMainDocumentStyles'] = CustomStyleInterface.prototype.watchMainDocumentStyles;
 
 Object.defineProperties(CustomStyleInterface.prototype, {
   'transformCallback': {
@@ -142,15 +184,4 @@ Object.defineProperties(CustomStyleInterface.prototype, {
       }
     },
   }
-})
-
-/** @typedef {{
- * customStyles: !Array<!CustomStyleProvider>,
- * addCustomStyle: function(!CustomStyleProvider),
- * getStyleForCustomStyle: function(!CustomStyleProvider): HTMLStyleElement,
- * findStyles: function(),
- * transformCallback: ?function(!HTMLStyleElement),
- * validateCallback: ?function()
- * }}
- */
-export let CustomStyleInterfaceInterface;
+});

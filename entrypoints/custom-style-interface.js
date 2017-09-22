@@ -60,6 +60,9 @@ if (!window.ShadyCSS) {
     nativeCss: nativeCssVariables,
     nativeShadow: nativeShadow
   }
+  customStyleInterface.watchMainDocumentStyles();
 }
 
-window.ShadyCSS.CustomStyleInterface = customStyleInterface;
+if (!window.ShadyCSS.CustomStyleInterface) {
+  window.ShadyCSS.CustomStyleInterface = customStyleInterface;
+}

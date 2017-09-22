@@ -71,15 +71,37 @@ WCT = {waitFor: function (cb) {HTMLImports.whenReady(cb)}}
   <x-inner></x-inner>
 </template>
 
+<template id="x-unwrapped-custom">
+  <style>
+    :host {
+      display: block;
+      border: var(--unwrapped-var);
+      @apply --unwrapped-mixin;
+    }
+  </style>
+</template>
+
+<style>
+  html {
+    --unwrapped-var: 10px solid black;
+    --unwrapped-mixin: {
+      background-color: rgb(123, 123, 123);
+    };
+  }
+</style>
+
 <x-outer id="target"></x-outer>
 
 <div class="base64">base64</div>
+
+<x-unwrapped-custom></x-unwrapped-custom>
 
 <script>
   suite('Custom Style upgrades', function() {
     suiteSetup(function() {
       makeElement('x-inner');
       makeElement('x-outer');
+      makeElement('x-unwrapped-custom');
     });
     test('custom-style applies to deeply nested elements', function() {
       var target = document.querySelector('#target');
@@ -96,5 +118,10 @@ WCT = {waitFor: function (cb) {HTMLImports.whenReady(cb)}}
       var target = document.querySelector('.base64');
       assert.match(getComputedStyle(target).backgroundImage, /url\("?data\:image\/gif;base64,R0lGODlhAQABAIAAAAAAAP\/\/\/yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"?\)/);
     });
+    test('unwrapped top level style works', function() {
+      var target = document.querySelector('x-unwrapped-custom');
+      assert.equal(getComputedStyle(target).borderTopWidth, '10px');
+      assert.equal(getComputedStyle(target).backgroundColor, 'rgb(123, 123, 123)');
+    })
   });
 </script>

@@ -16,7 +16,7 @@ import {getIsExtends, toCssText} from '../src/style-util.js';
 import * as ApplyShimUtils from '../src/apply-shim-utils.js';
 import documentWait from '../src/document-wait.js';
 import {getComputedStyleValue, updateNativeProperties} from '../src/common-utils.js';
-import {CustomStyleInterfaceInterface} from '../src/custom-style-interface.js'; // eslint-disable-line no-unused-vars
+import CustomStyleInterface from '../src/custom-style-interface.js';
 import {nativeCssVariables, nativeShadow} from '../src/style-settings.js';
 
 /** @const {ApplyShim} */
@@ -24,7 +24,7 @@ const applyShim = new ApplyShim();
 
 class ApplyShimInterface {
   constructor() {
-    /** @type {?CustomStyleInterfaceInterface} */
+    /** @type {CustomStyleInterface} */
     this.customStyleInterface = null;
     documentWait(() => {
       this.ensure();
@@ -36,18 +36,21 @@ class ApplyShimInterface {
       return;
     }
     this.customStyleInterface = window.ShadyCSS.CustomStyleInterface;
-    if (this.customStyleInterface) {
-      this.customStyleInterface['transformCallback'] = (style) => {
-        applyShim.transformCustomStyle(style);
-      };
-      this.customStyleInterface['validateCallback'] = () => {
-        requestAnimationFrame(() => {
-          if (this.customStyleInterface['enqueued']) {
-            this.flushCustomStyles();
-          }
-        });
-      }
+    if (!this.customStyleInterface) {
+      this.customStyleInterface = new CustomStyleInterface();
+      window.ShadyCSS.CustomStyleInterface = this.customStyleInterface;
     }
+    this.customStyleInterface['transformCallback'] = (style) => {
+      applyShim.transformCustomStyle(style);
+    };
+    this.customStyleInterface['validateCallback'] = () => {
+      requestAnimationFrame(() => {
+        if (this.customStyleInterface['enqueued']) {
+          this.flushCustomStyles();
+        }
+      });
+    };
+    this.customStyleInterface['watchMainDocumentStyles']();
   }
   /**
    * @param {!HTMLTemplateElement} template

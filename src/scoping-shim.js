@@ -23,7 +23,7 @@ import templateMap from './template-map.js';
 import * as ApplyShimUtils from './apply-shim-utils.js';
 import documentWait from './document-wait.js';
 import {updateNativeProperties, detectMixin} from './common-utils.js';
-import {CustomStyleInterfaceInterface} from './custom-style-interface.js'; // eslint-disable-line no-unused-vars
+import CustomStyleInterface from './custom-style-interface.js';
 
 /**
  * @const {StyleCache}
@@ -39,7 +39,7 @@ export default class ScopingShim {
     this._documentOwnerStyleInfo = StyleInfo.set(this._documentOwner, new StyleInfo(ast));
     this._elementsHaveApplied = false;
     this._applyShim = null;
-    /** @type {?CustomStyleInterfaceInterface} */
+    /** @type {?CustomStyleInterface} */
     this._customStyleInterface = null;
     documentWait(() => {
       this._ensure();
@@ -164,21 +164,25 @@ export default class ScopingShim {
     if (this._customStyleInterface) {
       return;
     } else if (window.ShadyCSS && window.ShadyCSS.CustomStyleInterface) {
-      this._customStyleInterface = /** @type {!CustomStyleInterfaceInterface} */(window.ShadyCSS.CustomStyleInterface);
-      /** @type {function(!HTMLStyleElement)} */
-      this._customStyleInterface['transformCallback'] = (style) => {this.transformCustomStyleForDocument(style)};
-      this._customStyleInterface['validateCallback'] = () => {
-        requestAnimationFrame(() => {
-          if (this._customStyleInterface['enqueued'] || this._elementsHaveApplied) {
-            this.flushCustomStyles();
-          }
-        })
-      };
+      this._customStyleInterface = /** @type {!CustomStyleInterface} */(window.ShadyCSS.CustomStyleInterface);
+    } else {
+      this._customStyleInterface = new CustomStyleInterface();
+      window.ShadyCSS.CustomStyleInterface = this._customStyleInterface;
     }
+    /** @type {function(!HTMLStyleElement)} */
+    this._customStyleInterface['transformCallback'] = (style) => {this.transformCustomStyleForDocument(style)};
+    this._customStyleInterface['validateCallback'] = () => {
+      requestAnimationFrame(() => {
+        if (this._customStyleInterface['enqueued'] || this._elementsHaveApplied) {
+          this.flushCustomStyles();
+        }
+      })
+    };
+    this._customStyleInterface['watchMainDocumentStyles']();
   }
   _ensure() {
-    this._ensureApplyShim();
     this._ensureCustomStyleInterface();
+    this._ensureApplyShim();
   }
   /**
    * Flush and apply custom styles to document

@@ -10,36 +10,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 'use strict';
 
-/** @type {Promise<void>} */
-let readyPromise = null;
-
 /** @type {?function(?function())} */
 let whenReady = window['HTMLImports'] && window['HTMLImports']['whenReady'] || null;
 
-/** @type {function()} */
-let resolveFn;
+/** @const {Promise<void>} */
+const readyPromise = new Promise((resolve) => {
+  requestAnimationFrame(() => {
+    if (whenReady) {
+      whenReady(resolve)
+    } else if (document.readyState === 'complete') {
+      resolve();
+    } else {
+      document.addEventListener('readystatechange', () => {
+        if (document.readyState === 'complete') {
+          resolve();
+        }
+      });
+    }
+  });
+});
 
 /**
  * @param {?function()} callback
  */
 export default function documentWait(callback) {
-  requestAnimationFrame(function() {
-    if (whenReady) {
-      whenReady(callback)
-    } else {
-      if (!readyPromise) {
-        readyPromise = new Promise((resolve) => {resolveFn = resolve});
-        if (document.readyState === 'complete') {
-          resolveFn();
-        } else {
-          document.addEventListener('readystatechange', () => {
-            if (document.readyState === 'complete') {
-              resolveFn();
-            }
-          });
-        }
-      }
-      readyPromise.then(function(){ callback && callback(); });
-    }
-  });
+  readyPromise.then(function(){ callback && callback(); });
 }
