@@ -172,6 +172,7 @@ CustomStyleInterface.prototype['addCustomStyle'] = CustomStyleInterface.prototyp
 CustomStyleInterface.prototype['getStyleForCustomStyle'] = CustomStyleInterface.prototype.getStyleForCustomStyle;
 CustomStyleInterface.prototype['processStyles'] = CustomStyleInterface.prototype.processStyles;
 CustomStyleInterface.prototype['watchMainDocumentStyles'] = CustomStyleInterface.prototype.watchMainDocumentStyles;
+CustomStyleInterface.prototype['_resetCachedStyles'] = CustomStyleInterface.prototype._resetCachedStyles;
 
 Object.defineProperties(CustomStyleInterface.prototype, {
   'transformCallback': {
