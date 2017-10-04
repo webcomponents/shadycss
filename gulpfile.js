@@ -60,7 +60,6 @@ function closurify(entry) {
     .pipe(closure({
       new_type_inf: true,
       compilation_level: 'ADVANCED',
-      formatting: 'PRETTY_PRINT',
       language_in: 'ES6_STRICT',
       language_out: 'ES5_STRICT',
       isolation_mode: 'IIFE',
