@@ -60,6 +60,7 @@ function closurify(entry) {
     .pipe(closure({
       new_type_inf: true,
       compilation_level: 'ADVANCED',
+      formatting: 'PRETTY_PRINT',
       language_in: 'ES6_STRICT',
       language_out: 'ES5_STRICT',
       isolation_mode: 'IIFE',
@@ -98,7 +99,6 @@ function debugify(entry) {
 const entrypoints = [
   'scoping-shim',
   'apply-shim',
-  'custom-style-interface'
 ]
 
 let closureTasks = entrypoints.map((e) => closurify(e));
@@ -107,7 +107,7 @@ let debugTasks = entrypoints.map((e) => debugify(e));
 gulp.task('default', ['closure', 'test-modules']);
 
 gulp.task('closure', (cb) => {
-  runseq.apply(null, closureTasks.concat(cb))
+  runseq(...closureTasks, cb);
 });
 
 gulp.task('debug', debugTasks);

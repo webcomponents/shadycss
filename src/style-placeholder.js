@@ -8,13 +8,11 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 */
 
-'use strict';
-
 import {applyStylePlaceHolder} from './style-util.js';
 import {nativeShadow} from './style-settings.js';
 
 /** @type {Object<string, !Node>} */
-let placeholderMap = {};
+export let placeholderMap = {};
 
 /**
  * @const {CustomElementRegistry}
@@ -37,5 +35,3 @@ if (ce && !nativeShadow) {
   }
   ce['define'] = wrappedDefine;
 }
-
-export default placeholderMap;

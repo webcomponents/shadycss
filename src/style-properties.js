@@ -8,14 +8,12 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 */
 
-'use strict';
-
 import {removeCustomPropAssignment, StyleNode} from './css-parse.js'; // eslint-disable-line no-unused-vars
 import {nativeShadow} from './style-settings.js';
 import StyleTransformer from './style-transformer.js';
 import * as StyleUtil from './style-util.js';
 import * as RX from './common-regex.js';
-import StyleInfo from './style-info.js';
+import {StyleInfo} from './style-info.js';
 
 // TODO: dedupe with shady
 /**

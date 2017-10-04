@@ -8,19 +8,17 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 */
 
-'use strict';
-
-import ScopingShim from '../src/scoping-shim.js';
+import {CustomStyleInterface} from '../src/custom-style-interface.js';
+import {ScopingShim} from '../src/scoping-shim.js';
 import {nativeCssVariables, nativeShadow} from '../src/style-settings.js';
 
-/** @const {ScopingShim} */
+/** @const {!ScopingShim} */
 const scopingShim = new ScopingShim();
 
-let ApplyShim, CustomStyleInterface;
+let ApplyShimImpl;
 
 if (window['ShadyCSS']) {
-  ApplyShim = window['ShadyCSS']['ApplyShim'];
-  CustomStyleInterface = window['ShadyCSS']['CustomStyleInterface'];
+  ApplyShimImpl = window['ShadyCSS']['ApplyShim'];
 }
 
 window.ShadyCSS = {
@@ -71,13 +69,11 @@ window.ShadyCSS = {
 
   nativeCss: nativeCssVariables,
 
-  nativeShadow: nativeShadow
+  nativeShadow: nativeShadow,
+
+  CustomStyleInterface: new CustomStyleInterface()
 };
 
-if (ApplyShim) {
-  window.ShadyCSS.ApplyShim = ApplyShim;
-}
-
-if (CustomStyleInterface) {
-  window.ShadyCSS.CustomStyleInterface = CustomStyleInterface;
+if (ApplyShimImpl) {
+  window.ShadyCSS.ApplyShim = ApplyShimImpl;
 }

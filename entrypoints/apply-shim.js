@@ -8,15 +8,13 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 */
 
-'use strict';
-
-import ApplyShim from '../src/apply-shim.js';
-import templateMap from '../src/template-map.js';
+import {ApplyShim} from '../src/apply-shim.js';
+import {templateMap} from '../src/template-map.js';
 import {getIsExtends, toCssText} from '../src/style-util.js';
 import * as ApplyShimUtils from '../src/apply-shim-utils.js';
-import documentWait from '../src/document-wait.js';
+import {documentWait} from '../src/document-wait.js';
 import {getComputedStyleValue, updateNativeProperties} from '../src/common-utils.js';
-import CustomStyleInterface from '../src/custom-style-interface.js';
+import {CustomStyleInterface} from '../src/custom-style-interface.js';
 import {nativeCssVariables, nativeShadow} from '../src/style-settings.js';
 
 /** @const {ApplyShim} */
@@ -36,10 +34,6 @@ class ApplyShimInterface {
       return;
     }
     this.customStyleInterface = window.ShadyCSS.CustomStyleInterface;
-    if (!this.customStyleInterface) {
-      this.customStyleInterface = new CustomStyleInterface();
-      window.ShadyCSS.CustomStyleInterface = this.customStyleInterface;
-    }
     this.customStyleInterface['transformCallback'] = (style) => {
       applyShim.transformCustomStyle(style);
     };
@@ -139,7 +133,6 @@ class ApplyShimInterface {
 
 if (!window.ShadyCSS || !window.ShadyCSS.ScopingShim) {
   const applyShimInterface = new ApplyShimInterface();
-  let CustomStyleInterface = window.ShadyCSS && window.ShadyCSS.CustomStyleInterface;
 
   window.ShadyCSS = {
     /**
@@ -186,12 +179,9 @@ if (!window.ShadyCSS || !window.ShadyCSS.ScopingShim) {
       return getComputedStyleValue(element, property);
     },
     nativeCss: nativeCssVariables,
-    nativeShadow: nativeShadow
+    nativeShadow: nativeShadow,
+    CustomStyleInterface: new CustomStyleInterface()
   };
-
-  if (CustomStyleInterface) {
-    window.ShadyCSS.CustomStyleInterface = CustomStyleInterface;
-  }
 }
 
 window.ShadyCSS.ApplyShim = applyShim;

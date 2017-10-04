@@ -13,10 +13,8 @@ Extremely simple css parser. Intended to be not more than what we need
 and definitely not necessarily correct =).
 */
 
-'use strict';
-
 /** @unrestricted */
-class StyleNode {
+export class StyleNode {
   constructor() {
     /** @type {number} */
     this['start'] = 0;
@@ -44,8 +42,6 @@ class StyleNode {
     this['parsedSelector'] = '';
   }
 }
-
-export {StyleNode}
 
 // given a string of css, return a simple rule tree
 /**

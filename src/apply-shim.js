@@ -69,8 +69,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 */
 
-'use strict';
-
 import {forEachRule, processVariableAndFallback, rulesForStyle, toCssText} from './style-util.js';
 import {MIXIN_MATCH, VAR_ASSIGN} from './common-regex.js';
 import {detectMixin} from './common-utils.js';
@@ -135,7 +133,7 @@ class MixinMap {
 let invalidCallback = null;
 
 /** @unrestricted */
-class ApplyShim {
+export class ApplyShim {
   constructor() {
     /** @type {?string} */
     this._currentElement = null;
@@ -458,5 +456,3 @@ Object.defineProperty(ApplyShim.prototype, 'invalidCallback', {
     invalidCallback = cb;
   }
 });
-
-export default ApplyShim;

@@ -9,7 +9,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 */
 
 /*
-A simple shim to generate a testable module
+Wrapper over <style> elements to co-operate with HTML Imports
 */
 
-import '../../examples/custom-style-element'
+class CustomStyle extends HTMLElement {
+  connectedCallback() {
+    if (this.ownerDocument !== window.document) {
+      let style = this.querySelector('style');
+      document.head.appendChild(style);
+    }
+  }
+}
+
+window.customElements.define('custom-style', CustomStyle);

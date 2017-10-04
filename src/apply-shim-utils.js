@@ -8,8 +8,7 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 */
 
-'use strict';
-import templateMap from './template-map.js';
+import {templateMap} from './template-map.js';
 import {StyleNode} from './css-parse.js'; // eslint-disable-line no-unused-vars
 
 /*

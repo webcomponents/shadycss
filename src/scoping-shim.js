@@ -8,29 +8,24 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 */
 
-'use strict';
-
 import {parse, StyleNode} from './css-parse.js';
 import {nativeShadow, nativeCssVariables} from './style-settings.js';
 import StyleTransformer from './style-transformer.js';
 import * as StyleUtil from './style-util.js';
 import StyleProperties from './style-properties.js';
-import placeholderMap from './style-placeholder.js';
-import StyleInfo from './style-info.js';
-import StyleCache from './style-cache.js';
+import {placeholderMap} from './style-placeholder.js';
+import {StyleInfo} from './style-info.js';
+import {StyleCache} from './style-cache.js';
 import {flush as watcherFlush} from './document-watcher.js';
-import templateMap from './template-map.js';
+import {templateMap} from './template-map.js';
 import * as ApplyShimUtils from './apply-shim-utils.js';
-import documentWait from './document-wait.js';
+import {documentWait} from './document-wait.js';
 import {updateNativeProperties, detectMixin} from './common-utils.js';
-import CustomStyleInterface from './custom-style-interface.js';
+import {CustomStyleInterface} from './custom-style-interface.js'; // eslint-disable-line no-unused-vars
 
-/**
- * @const {StyleCache}
- */
 const styleCache = new StyleCache();
 
-export default class ScopingShim {
+export class ScopingShim {
   constructor() {
     this._scopeCounter = {};
     this._documentOwner = document.documentElement;
@@ -39,7 +34,7 @@ export default class ScopingShim {
     this._documentOwnerStyleInfo = StyleInfo.set(this._documentOwner, new StyleInfo(ast));
     this._elementsHaveApplied = false;
     this._applyShim = null;
-    /** @type {?CustomStyleInterface} */
+    /** @type {CustomStyleInterface} */
     this._customStyleInterface = null;
     documentWait(() => {
       this._ensure();
@@ -155,20 +150,19 @@ export default class ScopingShim {
   _ensureApplyShim() {
     if (this._applyShim) {
       return;
-    } else if (window.ShadyCSS && window.ShadyCSS.ApplyShim) {
+    } else if (window.ShadyCSS.ApplyShim) {
       this._applyShim = window.ShadyCSS.ApplyShim;
       this._applyShim['invalidCallback'] = ApplyShimUtils.invalidate;
+      if (this._customStyleInterface) {
+        this._customStyleInterface['_resetCachedStyles']();
+      }
     }
   }
   _ensureCustomStyleInterface() {
     if (this._customStyleInterface) {
       return;
-    } else if (window.ShadyCSS && window.ShadyCSS.CustomStyleInterface) {
-      this._customStyleInterface = /** @type {!CustomStyleInterface} */(window.ShadyCSS.CustomStyleInterface);
-    } else {
-      this._customStyleInterface = new CustomStyleInterface();
-      window.ShadyCSS.CustomStyleInterface = this._customStyleInterface;
     }
+    this._customStyleInterface = window.ShadyCSS.CustomStyleInterface;
     /** @type {function(!HTMLStyleElement)} */
     this._customStyleInterface['transformCallback'] = (style) => {this.transformCustomStyleForDocument(style)};
     this._customStyleInterface['validateCallback'] = () => {
@@ -181,8 +175,8 @@ export default class ScopingShim {
     this._customStyleInterface['watchMainDocumentStyles']();
   }
   _ensure() {
-    this._ensureCustomStyleInterface();
     this._ensureApplyShim();
+    this._ensureCustomStyleInterface();
   }
   /**
    * Flush and apply custom styles to document

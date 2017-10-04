@@ -102,9 +102,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   }
 
   function loadCustomStyle() {
-    return loadScript('../custom-style-interface.min.js').then(() => {
-      return loadScript('module/generated/custom-style-element.js')
-    });
+    return loadScript('module/generated/custom-style-element.js')
   }
 
   function loadApplyShim() {

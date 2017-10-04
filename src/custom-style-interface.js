@@ -8,9 +8,7 @@ Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 */
 
-'use strict';
-
-import documentWait from './document-wait.js';
+import {documentWait} from './document-wait.js';
 
 /**
  * @typedef {HTMLStyleElement | {getStyle: function():HTMLStyleElement}}
@@ -20,11 +18,28 @@ export let CustomStyleProvider;
 const SEEN_MARKER = '__seenByShadyCSS';
 const CACHED_STYLE = '__shadyCSSCachedStyle';
 
+const UNSCOPED_SELECTOR = 'style:not([scope])';
+
 /** @type {?function(!HTMLStyleElement)} */
 let transformFn = null;
 
 /** @type {?function()} */
 let validateFn = null;
+
+const NODELIST_FOREACH = Boolean(NodeList.prototype.forEach);
+
+/**
+ * @param {!NodeList} nodeList
+ * @param {function(!HTMLStyleElement)} callback
+ * @param {!CustomStyleInterface} context
+ */
+function forEach(nodeList, callback, context) {
+  if (NODELIST_FOREACH) {
+    nodeList.forEach(callback, context);
+  } else {
+    Array.from(nodeList).forEach(callback, context);
+  }
+}
 
 /**
 This interface is provided to add document-level <style> elements to ShadyCSS for processing.
@@ -40,7 +55,7 @@ An example usage of the document-level styling api can be found in `examples/doc
 
 @unrestricted
 */
-export default class CustomStyleInterface {
+export class CustomStyleInterface {
   constructor() {
     /** @type {!Array<!CustomStyleProvider>} */
     this['customStyles'] = [];
@@ -59,6 +74,8 @@ export default class CustomStyleInterface {
     documentWait(validateFn);
   }
   /**
+   * Add styleseet to the `customStyles` array.
+   * Styles are only added if they have not been seen before.
    * @param {!HTMLStyleElement} style
    */
   addCustomStyle(style) {
@@ -88,6 +105,9 @@ export default class CustomStyleInterface {
    * @return {!Array<!CustomStyleProvider>}
    */
   processStyles() {
+    if (this.observer) {
+      this._mutationHandler(this.observer.takeRecords());
+    }
     const cs = this['customStyles'];
     for (let i = 0; i < cs.length; i++) {
       const customStyle = cs[i];
@@ -107,15 +127,8 @@ export default class CustomStyleInterface {
     }
     return cs;
   }
-  /**
-   * @param {!HTMLStyleElement} style
-   * @return {boolean}
-   */
-  isDocumentStyle(style) {
-    return !style.hasAttribute('scope');
-  }
   gatherMainDocumentStyles() {
-    const styles = document.querySelectorAll('style:not([scope])');
+    const styles = document.querySelectorAll(UNSCOPED_SELECTOR);
     for (let i = 0; i < styles.length; i++) {
       const s = /** @type {!HTMLStyleElement} */(styles[i]);
       this.addCustomStyle(s);
@@ -126,25 +139,31 @@ export default class CustomStyleInterface {
       return;
     }
     this.gatherMainDocumentStyles();
-    /**
-     * @param {Array<MutationRecord>} mxns
-     */
-    let mutationHandler = (mxns) => {
-      for (let i = 0; i < mxns.length; i++) {
-        let mxn = mxns[i];
-        for (let j = 0; j < mxn.addedNodes.length; j++) {
-          let n = mxn.addedNodes[j];
-          if (n.nodeType === Node.ELEMENT_NODE && n.localName === 'style') {
-            const el = /** @type {!HTMLStyleElement} */(n);
-            if (this.isDocumentStyle(el)) {
-              this.addCustomStyle(el);
-            }
+    this.observer = new MutationObserver((mxns) => this._mutationHandler(mxns));
+    this.observer.observe(document, {childList: true, subtree: true});
+  }
+  /**
+   * @param {Array<MutationRecord>} mxns
+   */
+  _mutationHandler(mxns) {
+    for (let i = 0; i < mxns.length; i++) {
+      let mxn = mxns[i];
+      for (let j = 0; j < mxn.addedNodes.length; j++) {
+        let n = mxn.addedNodes[j];
+        if (n.nodeType === Node.ELEMENT_NODE) {
+          if (n.localName === 'style' && !n.hasAttribute('scope')) {
+            this.addCustomStyle(/** @type {!HTMLStyleElement} */(n));
+          } else {
+            forEach(n.querySelectorAll(UNSCOPED_SELECTOR), this.addCustomStyle, this);
           }
         }
       }
-    };
-    this.observer = new MutationObserver(mutationHandler);
-    this.observer.observe(document, {childList: true, subtree: true});
+    }
+  }
+  _resetCachedStyles() {
+    this['customStyles'].forEach((cs) => {
+      cs[CACHED_STYLE] = null;
+    });
   }
 }
 
