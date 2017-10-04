@@ -30,7 +30,7 @@ const NODELIST_FOREACH = Boolean(NodeList.prototype.forEach);
 
 /**
  * @param {!NodeList} nodeList
- * @param {function(!HTMLStyleElement)} callback
+ * @param {function(this:CustomStyleInterface, !HTMLStyleElement)} callback
  * @param {!CustomStyleInterface} context
  */
 function forEach(nodeList, callback, context) {
@@ -151,8 +151,9 @@ export class CustomStyleInterface {
       for (let j = 0; j < mxn.addedNodes.length; j++) {
         let n = mxn.addedNodes[j];
         if (n.nodeType === Node.ELEMENT_NODE) {
-          if (n.localName === 'style' && !n.hasAttribute('scope')) {
-            this.addCustomStyle(/** @type {!HTMLStyleElement} */(n));
+          const el = /** @type {!HTMLElement} */(n);
+          if (el.localName === 'style' && !el.hasAttribute('scope')) {
+            this.addCustomStyle(/** @type {!HTMLStyleElement} */(el));
           } else {
             forEach(n.querySelectorAll(UNSCOPED_SELECTOR), this.addCustomStyle, this);
           }
