@@ -70,6 +70,32 @@ WCT = {waitFor: function (cb) {HTMLImports.whenReady(cb)}}
   </style>
 </template>
 
+<template id="child">
+  <style>
+    .parent child {
+      color: 'red';
+    }
+
+    child {
+      color: 'red';
+    }
+
+    .parent:not(:first-child) child .thing {
+      color: 'red';
+    }
+
+    .parent .again child .thing child .something {
+      color: 'red';
+    }
+
+    .selector1,
+    .selector2 child .a,
+    .selector3 child .b {
+      color: 'red';
+    }
+  </style>
+</template>
+
 <script>
 function processTemplate(templateName, elementName) {
   var template = document.querySelector('template#' + templateName);
@@ -134,6 +160,33 @@ suite('Style Transformer', function() {
       assert.equal(ast.rules[1].selector, '[dir="rtl"] x-dir, x-dir[dir="rtl"]');
     });
 
+  });
+
+  suite('child with parent context', function() {
+    var ast;
+    suiteSetup(function() {
+      ast = processTemplate('child', 'child');
+    });
+
+    test('do not add scoping to parent: simple', function() {
+      assert.equal(ast.rules[0].selector, '.parent child');
+    });
+
+    test('do not add scoping to parent: no parent', function() {
+      assert.equal(ast.rules[1].selector, 'child');
+    });
+
+    test('do not add scoping to parent: complex parent', function() {
+      assert.equal(ast.rules[2].selector, '.parent:not(:first-child) child .thing.child');
+    });
+
+    test('do not add scoping to parent: complex child', function() {
+      assert.equal(ast.rules[3].selector, '.parent .again child .thing.child child.child .something.child');
+    });
+
+    test('do not add scoping to parent: compound selectors', function() {
+      assert.equal(ast.rules[4].selector, '.selector1.child,.selector2 child .a.child,.selector3 child .b.child');
+    });
   });
 
   suite('custom-style transforms', function() {

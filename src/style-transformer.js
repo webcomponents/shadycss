@@ -23,6 +23,11 @@ import {nativeShadow} from './style-settings.js';
 
     div button -> div.x-foo-scope button.x-foo-scope
 
+  * however, scoping is limited to selectors following the element itself,
+  * which allows styling based on parent context:
+  
+    div x-foo-scope button -> div x-foo-scope button.x-foo-scope
+
 * :host -> scopeName
 
 * :host(...) -> scopeName...
@@ -211,8 +216,19 @@ class StyleTransformer {
       selector = this._twiddleNthPlus(selector);
     }
     selector = selector.replace(SLOTTED_START, `${HOST} $1`);
-    selector = selector.replace(SIMPLE_SELECTOR_SEP, (m, c, s) => {
-      if (!stop) {
+
+    // If the full selector string contains the hostScope as an element
+    // selector fragment, don't add any scope suffixes until we reach that
+    // element selector fragment.
+    // See: https://github.com/webcomponents/shadycss/issues/74
+    let hostSelectorIndex = selector.search(new RegExp('(?:\\s|^)' + hostScope + '(?:\\s|$)'));
+    let start = (hostSelectorIndex === -1);
+    selector = selector.replace(SIMPLE_SELECTOR_SEP, (m, c, s, index) => {
+      if (index > hostSelectorIndex) {
+        start = true;
+      }
+
+      if (start && !stop) {
         let info = this._transformCompoundSelector(s, c, scope, hostScope);
         stop = stop || info.stop;
         c = info.combinator;
@@ -292,7 +308,7 @@ class StyleTransformer {
     // which have been improperly used under Shady DOM. This should be
     // deprecated.
     } else {
-      return selector.replace(HOST, hostScope);
+      return selector.replace(HOST_NO_CONTEXT, hostScope);
     }
   }
 
@@ -334,6 +350,8 @@ let HOST = ':host';
 let ROOT = ':root';
 let SLOTTED = '::slotted';
 let SLOTTED_START = new RegExp(`^(${SLOTTED})`);
+// make sure old `:host-context()` rules do not get partially transformed
+let HOST_NO_CONTEXT = /:host(?!-context)/g;
 // NOTE: this supports 1 nested () pair for things like
 // :host(:not([selected]), more general support requires
 // parsing which seems like overkill

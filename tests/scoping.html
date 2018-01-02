@@ -44,12 +44,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 </template>
 
 <template id="x-child">
+  <style>
+    #blue-in-special {
+      border: 2px solid black;
+    }
+
+    #special x-child #blue-in-special {
+      border-color: blue;
+    }
+
+    :host-context(#special) #blue-in-special {
+      border-color: blue;
+    }
+  </style>
   <div id="simple">simple</div>
   <div id="complex1" class="scoped">complex1</div>
   <div id="complex2" selected>complex2</div>
   <div id="media">media</div>
   <div id="shadow" class="shadowTarget">shadowTarget</div>
   <div id="deep" class="deepTarget">deepTarget</div>
+  <div id="blue-in-special">only blue when in #special</div>
   <x-gchild id="gchild1"></x-gchild>
   <x-gchild id="gchild2" class="wide"></x-gchild>
 </template>
@@ -153,6 +167,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </div>
   <div class="container">
     <slot></slot>
+  </div>
+  <div id="special">
+    <x-child id="special-child"></x-child>
   </div>
   <x-child id="child"></x-child>
   <div id="priority">priority</div>
@@ -544,6 +561,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       assertComputed(findNode('el.$.child.$.media'), '0px');
     });
 
+    test('child styles based on parent selector', function() {
+      assertComputed(findNode('el.$.special.special-child.$.blue-in-special'), 'rgb(0, 0, 255)', 'border-top-color');
+      assertComputed(findNode('el.$.child.$.blue-in-special'), 'rgb(0, 0, 0)', 'border-top-color');
+    });
   });
 
   suite('slotted', function() {
