@@ -70,27 +70,22 @@ WCT = {waitFor: function (cb) {HTMLImports.whenReady(cb)}}
   </style>
 </template>
 
-<template id="child">
+<template id="host-with-parents">
   <style>
-    .parent child {
+    .parent :host .subclass {
       color: 'red';
     }
 
-    child {
+    .parent:not(:first-of-type) :host(.foo) .subclass {
       color: 'red';
     }
 
-    .parent:not(:first-child) child .thing {
+    .subclass,
+    .parent :host .subclass2 {
       color: 'red';
     }
 
-    .parent .again child .thing child .something {
-      color: 'red';
-    }
-
-    .selector1,
-    .selector2 child .a,
-    .selector3 child .b {
+    :host .subclass :host .subclass2 {
       color: 'red';
     }
   </style>
@@ -165,27 +160,13 @@ suite('Style Transformer', function() {
   suite('child with parent context', function() {
     var ast;
     suiteSetup(function() {
-      ast = processTemplate('child', 'child');
+      ast = processTemplate('host-with-parents', 'x-child');
     });
-
-    test('do not add scoping to parent: simple', function() {
-      assert.equal(ast.rules[0].selector, '.parent child');
-    });
-
-    test('do not add scoping to parent: no parent', function() {
-      assert.equal(ast.rules[1].selector, 'child');
-    });
-
-    test('do not add scoping to parent: complex parent', function() {
-      assert.equal(ast.rules[2].selector, '.parent:not(:first-child) child .thing.child');
-    });
-
-    test('do not add scoping to parent: complex child', function() {
-      assert.equal(ast.rules[3].selector, '.parent .again child .thing.child child.child .something.child');
-    });
-
-    test('do not add scoping to parent: compound selectors', function() {
-      assert.equal(ast.rules[4].selector, '.selector1.child,.selector2 child .a.child,.selector3 child .b.child');
+    test('do not add scope class to selectors before :host', function() {
+      assert.equal(ast.rules[0].selector, '.parent x-child .subclass.x-child');
+      assert.equal(ast.rules[1].selector, '.parent:not(:first-of-type) x-child.foo .subclass.x-child');
+      assert.equal(ast.rules[2].selector, '.subclass.x-child,.parent x-child .subclass2.x-child');
+      assert.equal(ast.rules[3].selector, 'x-child .subclass.x-child x-child .subclass2.x-child');
     });
   });
 

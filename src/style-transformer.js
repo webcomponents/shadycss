@@ -23,10 +23,10 @@ import {nativeShadow} from './style-settings.js';
 
     div button -> div.x-foo-scope button.x-foo-scope
 
-  * however, scoping is limited to selectors following the element itself,
-  * which allows styling based on parent context:
+  * however, scoping is limited to selectors following `:host`, which allows
+  * styling based on parent context:
   
-    div x-foo-scope button -> div x-foo-scope button.x-foo-scope
+    div :host button -> div x-foo-scope button.x-foo-scope
 
 * :host -> scopeName
 
@@ -207,6 +207,7 @@ class StyleTransformer {
  * @param {string=} hostScope
  */
   _transformComplexSelector(selector, scope, hostScope) {
+    let start = false;
     let stop = false;
     selector = selector.trim();
     // Remove spaces inside of selectors like `:nth-of-type` because it confuses SIMPLE_SELECTOR_SEP
@@ -217,14 +218,12 @@ class StyleTransformer {
     }
     selector = selector.replace(SLOTTED_START, `${HOST} $1`);
 
-    // If the full selector string contains the hostScope as an element
-    // selector fragment, don't add any scope suffixes until we reach that
-    // element selector fragment.
-    // See: https://github.com/webcomponents/shadycss/issues/74
-    let hostSelectorIndex = selector.search(new RegExp('(?:\\s|^)' + hostScope + '(?:\\s|$)'));
-    let start = (hostSelectorIndex === -1);
+    // If the full selector string contains the `:host` as a selector fragment,
+    // don't add any scope suffixes until we reach that part of the selector.
+    let hostIndex = selector.indexOf(HOST);
+
     selector = selector.replace(SIMPLE_SELECTOR_SEP, (m, c, s, index) => {
-      if (index > hostSelectorIndex) {
+      if (index + m.length > hostIndex) {
         start = true;
       }
 
