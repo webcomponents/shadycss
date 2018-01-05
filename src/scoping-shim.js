@@ -432,7 +432,7 @@ export default class ScopingShim {
       }
     }
     if (scopeName) {
-      classes.push(StyleTransformer.SCOPE_NAME, scopeName);
+      classes.push(StyleTransformer.SCOPE_NAME, StyleTransformer.hash(scopeName));
     }
     if (!nativeCssVariables) {
       let styleInfo = StyleInfo.get(element);

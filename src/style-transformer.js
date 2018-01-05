@@ -65,11 +65,23 @@ class StyleTransformer {
     }
   }
 
+  hash(scope) {
+    let hash = 0;
+    for (let i = 0; i < scope.length; i++) {
+      hash += Math.pow(scope.charCodeAt(i) * 31, scope.length - i);
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return `${SCOPE_NAME}-${scope}-${Math.abs(hash)}`;
+  }
+
   element(element, scope, shouldRemoveScope) {
-    // note: if using classes, we add both the general 'style-scope' class
-    // as well as the specific scope. This enables easy filtering of all
-    // `style-scope` elements
+    // note: if using classes, we add both the general 'style-scope' class as
+    // well as a hash of the given scope. This enables easy filtering of all
+    // `style-scope` elements. When removing the scope (shouldRemoveScope =
+    // true): the 2nd param is already the scope hash (because it has been
+    // pulled off the existing class list)
     if (scope) {
+      let scopeHash = this.hash(scope);
       // note: svg on IE does not have classList so fallback to class
       if (element.classList) {
         if (shouldRemoveScope) {
@@ -77,7 +89,7 @@ class StyleTransformer {
           element.classList.remove(scope);
         } else {
           element.classList.add(SCOPE_NAME);
-          element.classList.add(scope);
+          element.classList.add(scopeHash);
         }
       } else if (element.getAttribute) {
         let c = element.getAttribute(CLASS);
@@ -87,7 +99,7 @@ class StyleTransformer {
             StyleUtil.setElementClassRaw(element, newValue);
           }
         } else {
-          let newValue = (c ? c + ' ' : '') + SCOPE_NAME + ' ' + scope;
+          let newValue = (c ? c + ' ' : '') + SCOPE_NAME + ' ' + scopeHash;
           StyleUtil.setElementClassRaw(element, newValue);
         }
       }
@@ -133,7 +145,7 @@ class StyleTransformer {
 
   _calcElementScope(scope) {
     if (scope) {
-      return CSS_CLASS_PREFIX + scope;
+      return CSS_CLASS_PREFIX + this.hash(scope);
     } else {
       return '';
     }

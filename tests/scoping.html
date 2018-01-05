@@ -806,7 +806,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
       var circle = findNode('el.$.circle');
       var classes = (circle.getAttribute('class') || '').split(/\s+/);
-      assert.include(classes, 'x-scoped');
+      assert.include(classes, 'style-scope-x-scoped-583038858');
       assert.include(classes, 'style-scope');
       assert.notInclude(classes, 'null');
       assertComputed(circle, '1px', 'strokeWidth');
@@ -819,18 +819,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       var s = findNode('el.$.scopeClass');
       var scope = findNode('el.$.scopeClass.$.scope');
       assert.isTrue(s.classList.contains('style-scope'));
-      assert.isTrue(s.classList.contains('x-scoped'));
+      assert.isTrue(s.classList.contains('style-scope-x-scoped-583038858'));
       s.setAttribute('class', 'foo');
       assert.isTrue(s.classList.contains('foo'));
       assert.isTrue(s.classList.contains('style-scope'));
-      assert.isTrue(s.classList.contains('x-scoped'));
+      assert.isTrue(s.classList.contains('style-scope-x-scoped-583038858'));
       //
       assert.isTrue(scope.classList.contains('style-scope'));
-      assert.isTrue(scope.classList.contains('x-scope-class'));
+      assert.isTrue(scope.classList.contains('style-scope-x-scope-class-480001387'));
       scope.setAttribute('class', 'foo');
       assert.isTrue(scope.classList.contains('foo'));
       assert.isTrue(scope.classList.contains('style-scope'));
-      assert.isTrue(scope.classList.contains('x-scope-class'));
+      assert.isTrue(scope.classList.contains('style-scope-x-scope-class-480001387'));
     });
 
     test('specificity of :host selector with class', function() {

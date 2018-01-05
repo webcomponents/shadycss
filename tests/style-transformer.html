@@ -76,6 +76,7 @@ function processTemplate(templateName, elementName) {
   window.ShadyCSS.prepareTemplate(template, elementName);
   return template._styleAst;
 }
+
 suite('Style Transformer', function() {
   setup(function() {
     if (window.ShadyCSS.nativeShadow) {
@@ -97,7 +98,7 @@ suite('Style Transformer', function() {
     });
 
     test(':host > *{}', function() {
-      assert.equal(ast.rules[2].selector, 'x-foo > *.x-foo');
+      assert.equal(ast.rules[2].selector, 'x-foo > *.style-scope-x-foo-1708094837');
     });
   });
 
@@ -108,7 +109,7 @@ suite('Style Transformer', function() {
     });
 
     test('div::slotted(.foo)', function() {
-      assert.equal(ast.rules[0].selector, 'div.x-slot > .foo');
+      assert.equal(ast.rules[0].selector, 'div.style-scope-x-slot-120670049 > .foo');
     });
 
     test('::slotted(.bar)', function() {
@@ -127,7 +128,7 @@ suite('Style Transformer', function() {
     });
 
     test('div:dir(rtl)', function() {
-      assert.equal(ast.rules[0].selector, '[dir="rtl"] div.x-dir, div.x-dir[dir="rtl"]');
+      assert.equal(ast.rules[0].selector, '[dir="rtl"] div.style-scope-x-dir-762179568, div.style-scope-x-dir-762179568[dir="rtl"]');
     });
 
     test('host(:dir(rtl))', function() {
