@@ -365,3 +365,28 @@ found in Polymer, or use the `CustomStyleInterface` library to modify document l
 
 ShadyCSS works by processing a template for a given custom element class. Only the style
 elements present in that template will be scoped for the custom element's ShadowRoot.
+
+### Shorthand notation of property declaration can clash with expanded forms in `@apply`
+
+Whenever shorthand notations are used in conjunction with their expanded forms in `@apply`,
+depending in the order of usage of the mixins, properties can be overridden. This means
+that using both `background-color: green;` and `background: red;` in two separate CSS selectors
+can result in `background-color: transparent` in the selector that `background: red;` is specified.
+
+```css
+#nonexistent {
+  --my-mixin: {
+    background: red;
+  }
+}
+```
+with an element style definition of
+```css
+:host {
+  display: block;
+  background-color: green;
+  @apply(--my-mixin);
+}
+```
+results in the background being `transparent`, as an empty `background` definition replaces
+the `@apply` definition.
