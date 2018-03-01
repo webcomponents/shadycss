@@ -1,15 +1,17 @@
 {
-  "suites": ["tests/runner.html"],
+  "suites": ["test/runner.html"],
   "plugins": {
-    "browserOptions": {
-      "chrome": [
-        "headless",
-        "disable-gpu",
-        "disable-sandbox"
-      ],
-      "firefox": [
-        "-headless"
-      ]
+    "local": {
+      "browserOptions": {
+        "chrome": [
+          "headless",
+          "disable-gpu",
+          "no-sandbox"
+        ],
+        "firefox": [
+          "-headless"
+        ]
+      }
     }
   }
 }
