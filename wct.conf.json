@@ -1,5 +1,5 @@
 {
-  "suites": ["test/runner.html"],
+  "suites": ["tests/runner.html"],
   "plugins": {
     "local": {
       "browserOptions": {
