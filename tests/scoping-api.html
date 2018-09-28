@@ -25,10 +25,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     window.ShadyDOM = {force: true}
   </script>
   <script src="../node_modules/@webcomponents/shadydom/shadydom.min.js"></script>
-  <script>
-    // disable document watcher
-    window.ShadyDOM.handlesDynamicScoping = true;
-  </script>
   <script src="../node_modules/@webcomponents/custom-elements/custom-elements.min.js"></script>
   <script src="../scoping-shim.min.js"></script>
   <script src="../apply-shim.min.js"></script>
@@ -36,6 +32,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script src="module/generated/make-element.js"></script>
 </head>
 <body>
+  <custom-style>
+    <style>
+      div {
+        background-color: rgb(123, 123, 123);
+      }
+    </style>
+  </custom-style>
   <template id="sync-element">
     <style>
       div {
@@ -80,13 +83,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         arena.innerHTML = '';
       });
 
-      test('mutation observer is disabled', function(done) {
+      test('mutation observer is unneeded', function() {
         const inner = el.shadowRoot.querySelector('#inner');
         arena.appendChild(inner);
-        setTimeout(() => {
-          assertComputedStyle(inner, 'rgb(255, 0, 0)', 'background-color');
-          done();
-        }, 100);
+        assertComputedStyle(inner, 'rgb(123, 123, 123)', 'background-color');
       });
 
       test('currentScopeForNode', function() {
@@ -97,7 +97,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         assert.equal(csfn(disconnected), '', 'disconnected element should have a blank scope')
         const dynamic = document.createElement('div');
         el.shadowRoot.appendChild(dynamic);
-        assert.equal(csfn(dynamic), '', 'dynamically appended node will not be scoped yet');
+        assert.equal(csfn(dynamic), 'sync-element', 'dynamically appended node should be scoped synchronously');
       });
 
       test('scopeForNode', function() {
